@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String
+  role      String
+
+  listings  Listing[]
+  bookings  Booking[]
+  reviews   Review[]  @relation("UserReviews")
+}
+
+model Listing {
+  id                 Int                    @id @default(autoincrement())
+  title              String
+  description        String?
+  pricePerNight      Decimal                @db.Decimal(10, 2)
+  maxGuests          Int
+  address            String
+  city               String
+  country            String
+  listingType        String
+  numberOfBedrooms   Int?
+  numberOfBathrooms  Int?
+  squareMeters       Int?
+
+  hostId             Int
+  host               User                   @relation(fields: [hostId], references: [id])
+
+  bookings           Booking[]
+  reviews            Review[]               @relation("ListingReviews")
+  amenities          ApartmentAmenity[]
+  photos             ApartmentPhoto[]
+  availability       ApartmentAvailability[]
+}
+
+model Booking {
+  id             Int       @id @default(autoincrement())
+  userId         Int
+  listingId      Int
+  startDate      DateTime
+  endDate        DateTime
+  numberOfGuests Int
+  status         String
+
+  user           User      @relation(fields: [userId], references: [id])
+  listing        Listing   @relation(fields: [listingId], references: [id])
+  payment        Payment?
+
+  @@unique([userId, listingId, startDate])
+}
+
+model Review {
+  id          Int       @id @default(autoincrement())
+  guestId     Int       @map("Guest_ID")
+  apartmentId Int       @map("Apartment_ID")
+  rating      Int
+  comment     String?
+  reviewDate  DateTime  @map("Review_date")
+
+  guest       User      @relation(name: "UserReviews", fields: [guestId], references: [id])
+  apartment   Listing   @relation(name: "ListingReviews", fields: [apartmentId], references: [id])
+
+  @@map("Reviews")
+}
+
+model Payment {
+  id            Int       @id @default(autoincrement())
+  bookingId     Int       @map("Booking_ID")
+  paymentDate   DateTime  @map("Payment_date")
+  amount        Decimal   @db.Decimal(10, 2)
+  paymentMethod String
+
+  booking       Booking   @relation(fields: [bookingId], references: [id])
+
+  @@map("Payments")
+}
+
+model ApartmentAmenity {
+  id           Int       @id @default(autoincrement())
+  apartmentId  Int       @map("Apartment_ID")
+  amenity      String    @db.VarChar(100)
+
+  apartment    Listing   @relation(fields: [apartmentId], references: [id])
+
+  @@map("Apartment_Amenities")
+}
+
+model ApartmentPhoto {
+  id           Int       @id @default(autoincrement())
+  apartmentId  Int       @map("Apartment_ID")
+  photoUrl     String    @db.VarChar(255)
+  description  String?   @db.VarChar(255)
+
+  apartment    Listing   @relation(fields: [apartmentId], references: [id])
+
+  @@map("Apartment_Photos")
+}
+
+model ApartmentAvailability {
+  id           Int       @id @default(autoincrement())
+  apartmentId  Int       @map("Apartment_ID")
+  startDate    DateTime
+  endDate      DateTime
+  available    Boolean   @default(true)
+
+  apartment    Listing   @relation(fields: [apartmentId], references: [id])
+
+  @@map("Apartment_Availability")
+}

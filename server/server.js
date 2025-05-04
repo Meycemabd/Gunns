@@ -1,8 +1,12 @@
 // Server init 
+import express from 'express';
+import dotenv from 'dotenv'
 
-const express = require("express");
+//const express = require("express");
 const app = express();
-const PORT = 3000;
+//require('dotenv').config()
+dotenv.config()
+const PORT = process.env.PORT || 2000;
 
 
 app.get('/', (req, res) => {
